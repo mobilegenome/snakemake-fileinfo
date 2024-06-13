@@ -5,7 +5,11 @@ configfile: "config.yaml"
 
 # Load sample information from CSV
 sample_df = pd.read_csv(config["input_csv"])
+# add a unique ID for each sample
+sample_df['sample_name'] = sample_df['sample_name'] + '_' + sample_df.index.astype(str)
 sample_list = {row['sample_name']: row['file_path'] for index, row in sample_df.iterrows()}
+
+
 
 # Input and output files
 output_csv = config["output_csv"]
