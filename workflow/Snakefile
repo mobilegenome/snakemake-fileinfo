@@ -1,0 +1,37 @@
+import pandas as pd
+
+# Read config file
+configfile: "config.yaml"
+
+# Load sample information from CSV
+sample_df = pd.read_csv(config["input_csv"])
+sample_list = {row['sample_name']: row['file_path'] for index, row in sample_df.iterrows()}
+
+# Input and output files
+output_csv = config["output_csv"]
+
+rule all:
+    input:
+        output_csv
+
+rule get_file_info:
+    input:
+        lambda wildcards: sample_list[wildcards.sample]
+    output:
+        temp("data/{sample}.txt")
+    shell:
+        """
+        sample_name={wildcards.sample}
+        file_path={input}
+        file_size=$(stat --printf="%s" {input})
+        md5_sum=$(md5sum {input} | cut -d ' ' -f 1)
+        echo "$sample_name,$file_path,$file_size,$md5_sum" > {output}
+        """
+
+rule aggregate_info:
+    input:
+        expand("data/{sample}.txt", sample=sample_list.keys())
+    output:
+        output_csv
+    script:
+        "scripts/aggregate.py"
